@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soypan Leaderboard Overlay</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: transparent;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            overflow: hidden;
+        }
+
+        .leaderboard-container {
+            width: 100%;
+            max-width: 400px;
+            background: rgba(20, 25, 35, 0.95);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 15px;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00d4ff;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .last-updated {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 5px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 4px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            border-left: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .leaderboard-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(2px);
+        }
+
+        .leaderboard-item.rank-1 {
+            border-left-color: #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .leaderboard-item.rank-2 {
+            border-left-color: #c0c0c0;
+            background: rgba(192, 192, 192, 0.1);
+        }
+
+        .leaderboard-item.rank-3 {
+            border-left-color: #cd7f32;
+            background: rgba(205, 127, 50, 0.1);
+        }
+
+        .rank {
+            font-size: 16px;
+            font-weight: bold;
+            width: 25px;
+            text-align: center;
+            margin-right: 12px;
+        }
+
+        .rank-1 .rank {
+            color: #ffd700;
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+        }
+
+        .rank-2 .rank {
+            color: #c0c0c0;
+            text-shadow: 0 0 5px rgba(192, 192, 192, 0.5);
+        }
+
+        .rank-3 .rank {
+            color: #cd7f32;
+            text-shadow: 0 0 5px rgba(205, 127, 50, 0.5);
+        }
+
+        .user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .username {
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 2px;
+        }
+
+        .volume {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .prize {
+            font-size: 12px;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .prize.gold {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #000;
+        }
+
+        .prize.silver {
+            background: linear-gradient(45deg, #c0c0c0, #e8e8e8);
+            color: #000;
+        }
+
+        .prize.bronze {
+            background: linear-gradient(45deg, #cd7f32, #daa520);
+            color: #000;
+        }
+
+        .prize.green {
+            background: linear-gradient(45deg, #28a745, #34ce57);
+            color: #000;
+        }
+
+        .prize.zero {
+            background: linear-gradient(45deg, #dc3545, #ff4757);
+            color: #fff;
+        }
+
+        .loading {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid #00d4ff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            color: #ff4757;
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 71, 87, 0.1);
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="leaderboard-container">
+        <div class="header">
+            <div class="title">Soypan's Leaderboard</div>
+            <div class="subtitle">Top 10 Monthly</div>
+            <div class="last-updated" id="lastUpdated">Cargando...</div>
+        </div>
+        
+        <div id="leaderboard">
+            <div class="loading">
+                <div class="spinner"></div>
+                Cargando datos del leaderboard...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class LeaderboardOverlay {
+            constructor() {
+                this.updateInterval = 30000; // 30 segundos
+                this.maxRetries = 3;
+                this.retryDelay = 5000; // 5 segundos
+                this.init();
+            }
+
+            init() {
+                this.fetchLeaderboard();
+                setInterval(() => this.fetchLeaderboard(), this.updateInterval);
+            }
+
+            async fetchLeaderboard(retryCount = 0) {
+                try {
+                    const response = await $.ajax({
+                        url: 'https://yeeterboards.com/leaderboards/soypan/',
+                        method: 'GET',
+                        headers: {
+                            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                            "accept-language": "es-MX,es;q=0.9,en;q=0.8,zh-CN;q=0.7,zh;q=0.6",
+                            "cache-control": "max-age=0"
+                        },
+                        timeout: 10000
+                    });
+
+                    this.parseAndDisplayData(response);
+                    this.updateLastUpdated();
+
+                } catch (error) {
+                    console.error('Error fetching leaderboard:', error);
+                    
+                    if (retryCount < this.maxRetries) {
+                        console.log(`Reintentando en ${this.retryDelay/1000} segundos... (${retryCount + 1}/${this.maxRetries})`);
+                        setTimeout(() => {
+                            this.fetchLeaderboard(retryCount + 1);
+                        }, this.retryDelay);
+                    } else {
+                        this.displayError('Error al cargar los datos. Reintentando en 30 segundos...');
+                    }
+                }
+            }
+
+            parseAndDisplayData(htmlString) {
+                try {
+                    const $html = $(htmlString);
+                    const $table = $html.find('#timedLeaderboardTable tbody tr');
+                    
+                    if ($table.length === 0) {
+                        throw new Error('No se encontró la tabla del leaderboard');
+                    }
+
+                    const leaderboardData = [];
+                    
+                    $table.slice(0, 10).each((index, row) => {
+                        const $row = $(row);
+                        const rank = parseInt($row.find('.rank-cell').text().trim());
+                        const username = $row.find('.image-cell').text().trim();
+                        const volume = $row.find('td').eq(2).text().trim();
+                        const prizeText = $row.find('.badge').text().trim();
+                        
+                        if (username && volume && prizeText) {
+                            leaderboardData.push({
+                                rank: rank,
+                                username: username,
+                                volume: volume,
+                                prize: prizeText
+                            });
+                        }
+                    });
+
+                    if (leaderboardData.length > 0) {
+                        this.displayLeaderboard(leaderboardData);
+                    } else {
+                        throw new Error('No se pudieron extraer datos válidos');
+                    }
+
+                } catch (error) {
+                    console.error('Error parsing data:', error);
+                    this.displayError('Error al procesar los datos del leaderboard');
+                }
+            }
+
+            displayLeaderboard(data) {
+                const $leaderboard = $('#leaderboard');
+                $leaderboard.empty();
+
+                data.forEach(player => {
+                    const prizeClass = this.getPrizeClass(player.prize);
+                    const rankClass = `rank-${player.rank <= 3 ? player.rank : 'other'}`;
+                    
+                    const $item = $(`
+                        <div class="leaderboard-item ${rankClass}">
+                            <div class="rank">${player.rank}</div>
+                            <div class="user-info">
+                                <div class="username">${this.escapeHtml(player.username)}</div>
+                                <div class="volume">${player.volume}</div>
+                            </div>
+                            <div class="prize ${prizeClass}">${player.prize}</div>
+                        </div>
+                    `);
+                    
+                    $leaderboard.append($item);
+                });
+            }
+
+            getPrizeClass(prize) {
+                if (prize === '$300.00') return 'gold';
+                if (prize === '$225.00') return 'silver';
+                if (prize === '$150.00') return 'bronze';
+                if (prize === '$0.00') return 'zero';
+                return 'green';
+            }
+
+            displayError(message) {
+                $('#leaderboard').html(`<div class="error">${message}</div>`);
+            }
+
+            updateLastUpdated() {
+                const now = new Date();
+                const timeString = now.toLocaleString('es-MX', {
+                    month: 'short',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                $('#lastUpdated').text(`Actualizado: ${timeString}`);
+            }
+
+            escapeHtml(text) {
+                const map = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                };
+                return text.replace(/[&<>"']/g, m => map[m]);
+            }
+        }
+
+        // Inicializar el overlay cuando el documento esté listo
+        $(document).ready(() => {
+            new LeaderboardOverlay();
+        });
+    </script>
+</body>
+</html>
