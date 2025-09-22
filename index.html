@@ -74,18 +74,18 @@
         }
 
         .leaderboard-item.rank-1 {
-            border-left-color: #ffd700;
-            background: rgba(255, 215, 0, 0.1);
+            /* border-left-color: #ffd700; */
+            background: rgba(255, 215, 0, 0.2);
         }
 
         .leaderboard-item.rank-2 {
-            border-left-color: #c0c0c0;
-            background: rgba(192, 192, 192, 0.1);
+            /* border-left-color: #c0c0c0; */
+            background: rgba(192, 192, 192, 0.25);
         }
 
         .leaderboard-item.rank-3 {
-            border-left-color: #cd7f32;
-            background: rgba(205, 127, 50, 0.1);
+            /* border-left-color: #cd7f32; */
+            background: rgba(205, 127, 50, 0.2);
         }
 
         .rank {
@@ -206,7 +206,7 @@
         <div class="header">
             <div class="title">Yeet Leaderboard</div>
             <div class="subtitle">Top 10 - Mes</div>
-            <div class="last-updated" id="lastUpdated">Cargando...</div>
+            <!-- <div class="last-updated" id="lastUpdated">Cargando...</div> -->
         </div>
 
         <div id="leaderboard">
@@ -249,7 +249,7 @@
                         });
 
                         this.parseAndDisplayData(response);
-                        this.updateLastUpdated();
+                        // this.updateLastUpdated();
                         return; // Si funciona, salimos del bucle
 
                     } catch (error) {
